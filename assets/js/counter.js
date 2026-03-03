@@ -27,11 +27,12 @@ class Counter{
         // Wait for sprite to be ready
         if (!this.img.isReady) return;
 
-        const digit = String(this.points);
+        // Always 5 digits, pad with zeros
+        const digit = String(this.points).padStart(5, '0');
+
         const frameWidth = this.img.width / this.runningHorizontalFrames;
         const frameHeight = this.img.height;
 
-        // Scale digits so they fit nicely inside the box height
         const targetHeight = this.height * 0.7;
         const scale = targetHeight / frameHeight;
         const renderWidth = frameWidth * scale;
