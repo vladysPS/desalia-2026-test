@@ -21,7 +21,7 @@ class Counter{
         if (typeof pointsOuter === 'number') this.points = pointsOuter;
 
         // Counter background
-        this.ctx.fillStyle = 'pink';
+        this.ctx.fillStyle = 'transparent';
         this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
         // Wait for sprite to be ready

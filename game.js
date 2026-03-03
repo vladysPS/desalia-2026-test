@@ -41,7 +41,7 @@ class Game {
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this; // Pass the current Game instance to the Background so I can stop the game        
 
-        this.roadSpeed = 5;
+        this.roadSpeed = 8;
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.player = new Player(this.ctx, this.canvasHeight, this.soundJump);
@@ -121,18 +121,19 @@ class Game {
     collisions() {
     if (this.hasCollision) return;
 
-    for (let i = 0; i < this.obstacles.length; i++) {
-      const obstacle = this.obstacles[i];
-      if (this.checkCollision(this.player, obstacle)) {
-        this.hasCollision = true;
+      for (let obstacle of this.obstacles) {
+        const rects = obstacle.getCollisionRects(); // get all rectangles
+        for (let rect of rects) {
+          if (this.checkCollision(this.player, rect)) {
+            this.hasCollision = true;
 
-        this.stopGame();
-        this.soundCrash.currentTime = 0;
-        this.soundCrash.play();
-
-        return;
+            this.stopGame();
+            this.soundCrash.currentTime = 0;
+            this.soundCrash.play();
+            return;
+          }
+        }
       }
-    }
     }
     gameLoop() {
     if (!this.intervalId) {
