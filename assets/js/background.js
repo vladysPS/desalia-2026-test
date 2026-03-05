@@ -19,24 +19,20 @@ class Background {
     }
 
   draw() {
-    if (!this.img.isReady) return;
-
-    // Draw two tiles so the background can loop seamlessly
-    this.ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
-    this.ctx.drawImage(this.img, this.x + this.width, this.y, this.width, this.height);
+   if (this.img.isReady) {
+      this.ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
+    }
   }
 
   // Move the background left by xx pixels per frame
   move() {
-    if (!this.img.isReady) return;
-
-    this.x -= this.speed;
-
-    // Wrap when the first tile scrolls completely off screen
-    if (this.x <= -this.width) {
-      this.x = 0;
+    this.xWhereStop = -this.width + this.canvasWidth;
+    if (this.x > this.xWhereStop) {
+      this.x -= this.speed;
+    } else {
+      this.game.stopGame("win");
     }
-  }    
+  }   
 }
 
 export default Background;

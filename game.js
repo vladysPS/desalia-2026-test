@@ -8,7 +8,7 @@ class Game {
     constructor (ctx){
         this.ctx = ctx;
         this.intervalId = undefined;
-        this.todoRectoSinMiedo = false;
+        this.todoRectoSinMiedo = true;
 
         // Game over / restart UI
         this.restartContainer = document.querySelector('.restart-container');
@@ -37,11 +37,11 @@ class Game {
             this.setResponsiveSizes();
         });
 
-        this.backSpeed = 1;
+        this.backSpeed = 7;
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this; // Pass the current Game instance to the Background so I can stop the game        
 
-        this.roadSpeed = 8;
+        this.roadSpeed = 7;
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.player = new Player(this.ctx, this.canvasHeight, this.soundJump);
@@ -82,7 +82,7 @@ class Game {
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this;
 
-        this.roadSpeed = 5;
+        this.roadSpeed = 7;
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.obstacles = [];
@@ -127,7 +127,7 @@ class Game {
           if (this.checkCollision(this.player, rect)) {
             this.hasCollision = true;
 
-            this.stopGame();
+            this.stopGame("lose");
             this.soundCrash.currentTime = 0;
             this.soundCrash.play();
             return;
@@ -190,17 +190,22 @@ class Game {
       }, 1000 / 60);
     }
     } 
-    stopGame() {
-        clearInterval(this.intervalId);
-        this.intervalId = undefined;
+    stopGame(reason) {
+      if(reason === "lose"){
+        console.log('You lose!');
+      } else if (reason === "win"){
+        console.log("you win!!");
+      }
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
 
-        this.theme.pause();
-        this.isThemePlaying = false;
+      this.theme.pause();
+      this.isThemePlaying = false;
 
-        this.updateEndScore();
-        this.showRestartContainer();
+      this.updateEndScore();
+      this.showRestartContainer();
 
-        console.log('Game Over!');
+        
     }
     restartGame() {
         clearInterval(this.intervalId);
