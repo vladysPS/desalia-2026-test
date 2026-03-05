@@ -79,7 +79,7 @@ body {
             position: absolute;
             width: 100%;
             height: 100%;
-            background-image: url('/assets/images/poster-desk.png');
+            background-image: url('assets/images/poster-desk.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -89,7 +89,7 @@ body {
         .restart-container{
           
           position: absolute;
-          background: url('/assets/images/game-over-background.png');
+          background: url('assets/images/game-over-background.png');
           background-position: center;
           background-size: cover;
           background-repeat: no-repeat;
