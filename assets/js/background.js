@@ -27,7 +27,7 @@ class Background {
   }
 
   // Move the background left by xx pixels per frame
-  move() {
+  move(deltaFactor = 1) {
     if (!this.game) {
       console.warn('Background has no game reference');
       return;
@@ -36,7 +36,7 @@ class Background {
     if (!this.img.isReady || !this.width) return;
     this.xWhereStop = -this.width + this.canvasWidth;
     if (this.x > this.xWhereStop) {
-      this.x -= this.speed;
+      this.x -= this.speed * deltaFactor;
     } else {
       this.game.stopGame("win");
     }

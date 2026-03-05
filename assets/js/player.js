@@ -94,11 +94,12 @@ class Player {
     this.spriteFrameCounter = 0;
   }
 
-  move() {
-    this.y += this.vy;
+  move(deltaFactor = 1) {
+    // deltaFactor keeps physics consistent across variable frame times
+    this.y += this.vy * deltaFactor;
 
     if (this.y < this.playerGroundposition) {
-      this.vy += this.gravity;
+      this.vy += this.gravity * deltaFactor;
     }
 
     if (this.y >= this.playerGroundposition) {

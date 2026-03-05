@@ -24,8 +24,9 @@ class Road {
         }
     }
 
-    move() {
-        this.x -= this.speed;
+    move(deltaFactor = 1) {
+        // deltaFactor normalizes motion when frame time varies (1 = 60fps frame)
+        this.x -= this.speed * deltaFactor;
 
         if (this.x <= -this.width) {
         this.x = 0;
