@@ -10,6 +10,8 @@ class Background {
     this.canvasWidth = this.ctx.canvas.width;
     this.img = new Image();
     this.img.src = this.imgSrc;
+
+
     this.img.isReady = false;
     this.img.onload = () => {
       this.img.isReady = true;
@@ -26,6 +28,10 @@ class Background {
 
   // Move the background left by xx pixels per frame
   move() {
+    if (!this.game) {
+      console.warn('Background has no game reference');
+      return;
+    }
     this.xWhereStop = -this.width + this.canvasWidth;
     if (this.x > this.xWhereStop) {
       this.x -= this.speed;
