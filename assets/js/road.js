@@ -32,6 +32,12 @@ class Road {
         this.x = 0;
         }
     }
+
+    updateDimensions(canvasHeight) {
+        this.canvasHeight = canvasHeight;
+        this.height = this.canvasHeight / 4;
+        this.y = this.canvasHeight - this.height;
+    }
 }
 
 export default Road;

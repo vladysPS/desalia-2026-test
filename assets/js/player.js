@@ -1,13 +1,11 @@
 class Player {
     constructor (ctx,canvasHeight,soundJump){
         this.ctx = ctx;
-        this.canvasHeight = canvasHeight;
-
-        this.x = 100;
-        this.width = 127;
-        this.height = 197;
-        this.playerGroundposition = canvasHeight - this.height - (canvasHeight / 8);
-        this.y = this.playerGroundposition;
+        this.baseWidth = 127;
+        this.baseHeight = 197;
+        this.baseX = 100;
+        this.baseGroundOffsetRatio = 1 / 8;
+        this.updateDimensions(canvasHeight, canvasHeight / 700, true);
 
         this.img = new Image();
         this.img.src = "assets/images/skater-sprite-1.png";
@@ -28,8 +26,8 @@ class Player {
         this.spriteFrameCounter = 0;
 
         this.vy = 0;
-        this.gravity = 0.5;
-        this.jumpStrength = -15;
+        this.gravity = 0.5 * this.scale;
+        this.jumpStrength = -15 * this.scale;
 
         this.soundJump = soundJump;
         this.canJump = false;
@@ -90,10 +88,8 @@ class Player {
     }
   }
 
-  reset(canvasHeight) {
-    this.canvasHeight = canvasHeight;
-    this.playerGroundposition = this.canvasHeight - this.height - (this.canvasHeight / 8);
-    this.y = this.playerGroundposition;
+    reset(canvasHeight) {
+    this.updateDimensions(canvasHeight, canvasHeight / 700);
     this.vy = 0;
     this.xFrame = 0;
     this.yFrame = 0;
@@ -112,6 +108,23 @@ class Player {
       this.y = this.playerGroundposition;
       this.vy = 0;
     }
+  }
+
+  updateDimensions(canvasHeight, scale = this.scale, initializing = false) {
+    this.scale = scale;
+    this.canvasHeight = canvasHeight;
+    this.width = this.baseWidth * this.scale;
+    this.height = this.baseHeight * this.scale;
+    this.x = this.baseX * this.scale;
+    this.playerGroundposition = this.canvasHeight - this.height - (this.canvasHeight * this.baseGroundOffsetRatio);
+
+    const nextY = initializing && typeof this.y === 'undefined'
+      ? this.playerGroundposition
+      : Math.min(this.y ?? this.playerGroundposition, this.playerGroundposition);
+
+    this.y = nextY;
+    this.gravity = 0.5 * this.scale;
+    this.jumpStrength = -15 * this.scale;
   }
 }
 

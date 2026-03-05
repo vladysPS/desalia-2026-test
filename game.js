@@ -11,6 +11,10 @@ class Game {
         this.lastTimestamp = null;
         this.todoRectoSinMiedo = false;
         this.pausedForResize = false;
+        this.baseWidth = 1225;
+        this.baseHeight = 700;
+        this.targetAspect = this.baseWidth / this.baseHeight;
+        this.scale = 1;
       
         // sounds
         this.isThemePlaying = false;
@@ -180,10 +184,43 @@ class Game {
     }
     setResponsiveSizes() {
         const canvasContainer = document.getElementById('canvas-container');
-        this.canvasWidth = canvasContainer.offsetWidth;
-        this.canvasHeight = canvasContainer.offsetHeight;
+        if (!canvasContainer) return;
+
+        const padding = 24; // breathing room around the canvas
+        const maxWidth = Math.min(window.innerWidth - padding, this.baseWidth);
+        const maxHeight = Math.min(window.innerHeight - padding, this.baseHeight);
+
+        let width = maxWidth;
+        let height = width / this.targetAspect;
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * this.targetAspect;
+        }
+
+        canvasContainer.style.width = `${width}px`;
+        canvasContainer.style.height = `${height}px`;
+
+        this.canvasWidth = Math.round(width);
+        this.canvasHeight = Math.round(height);
+        this.scale = this.canvasHeight / this.baseHeight;
+
         this.ctx.canvas.width = this.canvasWidth;
         this.ctx.canvas.height = this.canvasHeight;
+
+        // Propagate new sizes to game elements
+        if (this.road && typeof this.road.updateDimensions === 'function') {
+            this.road.updateDimensions(this.canvasHeight, this.scale);
+        }
+        if (this.background && typeof this.background.updateDimensions === 'function') {
+            this.background.updateDimensions(this.canvasHeight, this.scale);
+        }
+        if (this.player && typeof this.player.updateDimensions === 'function') {
+            this.player.updateDimensions(this.canvasHeight, this.scale);
+        }
+        if (this.counter && typeof this.counter.updateDimensions === 'function') {
+            this.counter.updateDimensions(this.canvasWidth, this.canvasHeight, this.scale);
+        }
     }
     pauseForResize() {
         if (this.animationId) {
@@ -285,7 +322,7 @@ class Game {
         this.obstacleTimer += delta;
         if (this.obstacleTimer >= this.obstacleIntervalMs) {
           this.obstacles.push(
-            new Obstacle(this.ctx, this.canvasWidth, this.canvasHeight, this.road)
+            new Obstacle(this.ctx, this.canvasWidth, this.canvasHeight, this.road, this.scale)
           );
           this.obstacleTimer = 0;
           this.obstacleIntervalMs = this.getRandomObstacleTimeMs();

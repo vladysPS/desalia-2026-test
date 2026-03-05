@@ -10,11 +10,12 @@ obstacleSprites.medium.src = 'assets/images/botellas/botella-mediana.png';
 obstacleSprites.large.src = 'assets/images/botellas/botella-grande.png';
 
 class Obstacle {
-    constructor(ctx, canvasWidth, canvasHeight, road) {
+    constructor(ctx, canvasWidth, canvasHeight, road, scale = 1) {
         this.ctx = ctx;
         this.road = road;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.scale = scale;
 
         // Size presets
         this.sizes = [
@@ -29,20 +30,22 @@ class Obstacle {
         const sizeNames = ['small', 'medium', 'large'];
         this.sizeName = sizeNames[sizeIndex];
 
-        this.bottomHeight = size.bottomHeight;
-        this.topHeight = size.topHeight;
-        this.bottomWidth = size.bottomWidth;
-        this.topWidth = size.topWidth;
+        this.bottomHeight = size.bottomHeight * this.scale;
+        this.topHeight = size.topHeight * this.scale;
+        this.bottomWidth = size.bottomWidth * this.scale;
+        this.topWidth = size.topWidth * this.scale;
         this.sprite = obstacleSprites[this.sizeName];
 
         this.x = canvasWidth + this.bottomWidth;
-        this.bottomY = 500; // ground level
+
+        const roadTop = this.road ? this.road.y : this.canvasHeight * 0.75;
+        this.bottomY = roadTop - this.bottomHeight * 0.1; // sit slightly inside the road
         this.topY = this.bottomY - this.topHeight;
 
         // If it's small, choose randomly 2 or 3 bottles
         if (sizeIndex === 0) {
             this.count = Math.random() < 0.5 ? 2 : 3; // 50% chance 2, 50% chance 3
-            this.spacing = 10; // space between small bottles
+            this.spacing = 10 * this.scale; // space between small bottles
         } else {
             this.count = 1; // medium and large are single
         }

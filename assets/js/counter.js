@@ -1,20 +1,26 @@
-class Counter{
-    constructor(ctx,canvasWidth,canvasHeight){
+class Counter {
+    constructor(ctx, canvasWidth, canvasHeight) {
         this.ctx = ctx;
         this.points = 0;
-        this.width = 150;
-        this.height = 60;
-        this.x = canvasWidth - (this.width + 20);
-        this.y = canvasHeight - (canvasHeight-20);
+        this.scale = canvasHeight / 700;
+        this.updateDimensions(canvasWidth, canvasHeight, this.scale);
 
         this.img = new Image();
         this.img.src = "assets/images/Number-sprite.png";
         this.img.isReady = false;
         this.img.onload = () => (this.img.isReady = true);
         this.runningHorizontalFrames = 10;
+    }
 
-        this.paddingRight = 10; // space between number and box edge
-        this.digitSpacing = 2;  // space between digits when points > 9
+    updateDimensions(canvasWidth, canvasHeight, scale = this.scale) {
+        this.scale = scale;
+        this.width = 150 * this.scale;
+        this.height = 60 * this.scale;
+        this.x = canvasWidth - (this.width + 20 * this.scale);
+        this.y = 20 * this.scale;
+
+        this.paddingRight = 10 * this.scale; // space between number and box edge
+        this.digitSpacing = 2 * this.scale;  // space between digits when points > 9
     }
 
     draw(pointsOuter) {
@@ -61,7 +67,5 @@ class Counter{
         }
     }
 }
-
-
 
 export default Counter;
