@@ -32,6 +32,8 @@ class Background {
       console.warn('Background has no game reference');
       return;
     }
+    // Bail out until the image dimensions are known; prevents NaN stop positions
+    if (!this.img.isReady || !this.width) return;
     this.xWhereStop = -this.width + this.canvasWidth;
     if (this.x > this.xWhereStop) {
       this.x -= this.speed;

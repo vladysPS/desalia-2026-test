@@ -9,8 +9,7 @@ class Game {
         this.ctx = ctx;
         this.intervalId = undefined;
         this.todoRectoSinMiedo = false;
-
-        this.counter = new Counter(this.ctx, this.canvasWidth, this.canvasHeight);      
+      
         // sounds
         this.isThemePlaying = false;
         this.soundCrash = new Audio("./assets/sounds/flappyhit.mp3");
@@ -60,6 +59,8 @@ class Game {
         this.obstacleTimer = 0;
         this.obstacleInterval = this.getRandomObstacleTime();
         this.hasCollision = false;
+
+        this.counter = new Counter(this.ctx, this.canvasWidth, this.canvasHeight);
 
         // Show initial level banner
         this.showLevelBanner(this.presentLevel);
