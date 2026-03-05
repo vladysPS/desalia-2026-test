@@ -56,6 +56,7 @@ class Game {
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.player = new Player(this.ctx, this.canvasHeight, this.soundJump);
+        this.setInputEnabled(false);
 
         this.obstacles = [];
         this.obstacleTimer = 0; // accumulates elapsed ms
@@ -72,6 +73,11 @@ class Game {
         if (!this.restartButton) return;
 
         this.restartButton.addEventListener('click', () => this.restartGame());
+    }
+    setInputEnabled(enabled) {
+        if (this.player && typeof this.player.setInputEnabled === 'function') {
+            this.player.setInputEnabled(enabled);
+        }
     }
     hideRestartContainer() {
         if (this.restartContainer) {
@@ -118,6 +124,7 @@ class Game {
         this.isThemePlaying = false;
         this.theme.currentTime = 0;
         this.soundCrash.currentTime = 0;
+        this.setInputEnabled(false);
     }
 
     showLevelBanner(levelNumber) {
@@ -187,11 +194,13 @@ class Game {
         this.theme.pause();
         this.isThemePlaying = false;
         this.pausedForResize = true;
+        this.setInputEnabled(false);
     }
     resumeAfterResize() {
         const hasEnded = this.restartContainer && !this.restartContainer.classList.contains('hidden');
         if (!this.pausedForResize || this.hasCollision || hasEnded) return;
         this.pausedForResize = false;
+        this.setInputEnabled(true);
         this.gameLoop();
     }
     checkCollision(a, b) {
@@ -313,6 +322,7 @@ class Game {
       this.theme.pause();
       this.isThemePlaying = false;
       this.pausedForResize = false;
+      this.setInputEnabled(false);
 
       this.updateEndScore();
       this.showRestartContainer();
@@ -328,6 +338,7 @@ class Game {
         this.resetGameState();
         this.hideRestartContainer();
 
+        this.setInputEnabled(true);
         this.gameLoop();
     }
 }

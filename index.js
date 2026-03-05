@@ -74,6 +74,9 @@ if (startButton) {
         startButton.remove();
         startBackground?.remove();
         gameStarted = true;
+        if (typeof game.setInputEnabled === 'function') {
+            game.setInputEnabled(true);
+        }
         game.gameLoop();
     };
 }

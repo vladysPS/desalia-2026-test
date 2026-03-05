@@ -32,6 +32,7 @@ class Player {
         this.jumpStrength = -15;
 
         this.soundJump = soundJump;
+        this.canJump = false;
 
         document.addEventListener("click", () => this.jump());
         document.addEventListener("keydown", (event) => {
@@ -42,7 +43,12 @@ class Player {
         });        
     }
 
+    setInputEnabled(enabled) {
+        this.canJump = Boolean(enabled);
+    }
+
     jump() {
+        if (!this.canJump) return;
         if (this.y === this.playerGroundposition) {
             this.vy = this.jumpStrength;
             this.xFrame = 0;
