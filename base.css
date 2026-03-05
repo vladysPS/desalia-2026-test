@@ -60,9 +60,12 @@ body {
         align-items: center;
         justify-content: center;
         position: relative;
-        height: 90vh;
-        max-height: 700px;
-        width: auto;
+        width: min(100%, 1225px);
+        max-width: 100%;
+        aspect-ratio: 16 / 9;
+        height: auto;
+        min-height: 320px;
+        max-height: 90vh;
         border-radius: 20px;
         overflow: hidden;
         #start-button{
@@ -99,13 +102,13 @@ body {
           align-items: center;
           justify-content: center;
           flex-direction: column;
-          gap: 20px;
+          gap: 10px;
           z-index: 99;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
           .game-over-gif-cont{
-            width: 400px;
+            width: 200px;
             height: auto;
             margin-bottom:20px;
             img{
@@ -116,7 +119,7 @@ body {
           }
           .end-score{
             font-family: monospace;
-            font-size: 40px;
+            font-size: 30px;
             font-weight: 700;
             color: white;
           }
@@ -124,6 +127,10 @@ body {
             all:unset;
             cursor: pointer;
             transition: transform 0.2s ease;
+            img{
+              width: 150px;
+            }
+
           }
           button:hover{
             transform: scale(1.1);
@@ -132,6 +139,11 @@ body {
         }
         .restart-container.hidden{
           display: none;
+        }
+        canvas{
+          width: 100%;
+          height: 100%;
+          display: block;
         }
     }
 }

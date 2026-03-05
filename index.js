@@ -7,7 +7,7 @@ const overlay = document.getElementById('orientation-overlay');
 const overlayText = overlay?.querySelector('.overlay-text');
 const overlaySubtext = overlay?.querySelector('.overlay-subtext');
 
-const MIN_PLAY_WIDTH = 600;
+const MIN_PLAY_WIDTH = 480;
 
 const ctx = canvas.getContext('2d');
 const game = new Game(ctx);

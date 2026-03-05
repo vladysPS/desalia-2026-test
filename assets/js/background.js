@@ -26,6 +26,14 @@ class Background {
     }
   }
 
+  updateDimensions(canvasHeight) {
+    this.height = canvasHeight;
+    this.canvasWidth = this.ctx.canvas.width;
+    if (this.img.isReady) {
+      this.width = (this.img.naturalWidth / this.img.naturalHeight) * this.height;
+    }
+  }
+
   // Move the background left by xx pixels per frame
   move(deltaFactor = 1) {
     if (!this.game) {
