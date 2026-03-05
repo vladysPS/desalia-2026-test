@@ -7,8 +7,10 @@ import Counter from "./assets/js/counter.js";
 class Game {
     constructor (ctx){
         this.ctx = ctx;
-        this.intervalId = undefined;
+        this.animationId = undefined;
+        this.lastTimestamp = null;
         this.todoRectoSinMiedo = false;
+        this.pausedForResize = false;
       
         // sounds
         this.isThemePlaying = false;
@@ -22,7 +24,7 @@ class Game {
         this.countDownSound.volume = 0.5;                
         //Score
         this.pointsCounter = 0 ;
-        this.pointsFrameCounter = 0;
+        this.pointsFrameCounter = 0; // accumulates elapsed ms
 
         this.presentLevel = 1;
         this.levelSegment = undefined ;  
@@ -50,14 +52,14 @@ class Game {
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this; // Pass the current Game instance to the Background so I can stop the game        
 
-        this.roadSpeed = 7;
+        this.roadSpeed = 8;
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.player = new Player(this.ctx, this.canvasHeight, this.soundJump);
 
         this.obstacles = [];
-        this.obstacleTimer = 0;
-        this.obstacleInterval = this.getRandomObstacleTime();
+        this.obstacleTimer = 0; // accumulates elapsed ms
+        this.obstacleIntervalMs = this.getRandomObstacleTimeMs();
         this.hasCollision = false;
 
         this.counter = new Counter(this.ctx, this.canvasWidth, this.canvasHeight);
@@ -89,17 +91,19 @@ class Game {
     resetGameState() {
         this.pointsCounter = 0;
         this.pointsFrameCounter = 0;
+        this.lastTimestamp = null;
+        this.pausedForResize = false;
 
         this.backSpeed = 1;
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this;
 
-        this.roadSpeed = 7;
+        this.roadSpeed = 8;
         this.road = new Road(this.ctx, this.roadSpeed, this.canvasHeight);
 
         this.obstacles = [];
         this.obstacleTimer = 0;
-        this.obstacleInterval = this.getRandomObstacleTime();
+        this.obstacleIntervalMs = this.getRandomObstacleTimeMs();
         this.hasCollision = false;
 
         this.presentLevel = 1;
@@ -149,19 +153,23 @@ class Game {
       //return 60 + Math.random() * 120; entre 1 y 3 segundos aprox (en frames a 60fps)       
       // Spawn spacing shrinks as level rises but keeps a safe floor for jumpable gaps.
       const levelConfigs = [
-        { min: 100, max: 160 }, // level 1: ~1.6s - 2.7s
-        { min: 80, max: 130 },  // level 2: ~1.3s - 2.1s
-        { min: 60, max: 110 },  // level 3+: ~1.0s - 1.8s
+        { min: 80, max: 130 },  // level 1: ~1.3s - 2.1s
+        { min: 60, max: 110 },  // level 2: ~1.0s - 1.8s
+        { min: 45, max: 90 },   // level 3+: ~0.75s - 1.5s
       ];
 
       const idx = Math.min((this.presentLevel || 1) - 1, levelConfigs.length - 1);
       const { min, max } = levelConfigs[idx];
 
-      const safeMin = 45; // ~0.75s at 60fps — enough airtime for a jump arc
+      const safeMin = 35; // ~0.58s at 60fps — still jumpable but tighter
       const spanMin = Math.max(min, safeMin);
       const spanMax = Math.max(spanMin + 10, max); // keep some spread even at high levels
 
       return spanMin + Math.random() * (spanMax - spanMin);      
+    }
+    getRandomObstacleTimeMs() {
+      // Convert the frame-based spawn time to milliseconds assuming 60fps baseline
+      return this.getRandomObstacleTime() * (1000 / 60);
     }
     setResponsiveSizes() {
         const canvasContainer = document.getElementById('canvas-container');
@@ -169,6 +177,22 @@ class Game {
         this.canvasHeight = canvasContainer.offsetHeight;
         this.ctx.canvas.width = this.canvasWidth;
         this.ctx.canvas.height = this.canvasHeight;
+    }
+    pauseForResize() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = undefined;
+        }
+        this.lastTimestamp = null;
+        this.theme.pause();
+        this.isThemePlaying = false;
+        this.pausedForResize = true;
+    }
+    resumeAfterResize() {
+        const hasEnded = this.restartContainer && !this.restartContainer.classList.contains('hidden');
+        if (!this.pausedForResize || this.hasCollision || hasEnded) return;
+        this.pausedForResize = false;
+        this.gameLoop();
     }
     checkCollision(a, b) {
       return (
@@ -196,60 +220,70 @@ class Game {
       }
     }
     gameLoop() {
-    if (!this.intervalId) {
-      this.intervalId = setInterval(() => {
-        
-        //UNDO THIS COMMENT LATER
+      // Prevent multiple loops from stacking
+      if (this.animationId) return;
+
+      const step = (ts) => {
+        // Keep audio in loop once started
         if (!this.isThemePlaying) {
           this.theme.loop = true;
           this.theme.currentTime = 0;
           // this.theme.play();
           this.isThemePlaying = true;
         }
+
+        if (this.lastTimestamp === null) this.lastTimestamp = ts;
+        const delta = ts - this.lastTimestamp; // ms since last frame
+        const deltaFactor = delta / (1000 / 60); // normalize against 60fps frame
+        this.lastTimestamp = ts;
+
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
-        //POINTS COUNTER
-        this.pointsFrameCounter++;
-        if (this.pointsFrameCounter >= 60) {
+        //POINTS COUNTER (1 point per second)
+        this.pointsFrameCounter += delta;
+        if (this.pointsFrameCounter >= 1000) {
           this.pointsCounter += 1;
-          this.pointsFrameCounter = 0;
+          this.pointsFrameCounter -= 1000;
         }
 
-        //INCREASE LEVEL
-        this.levelSegment = this.background.img.width / this.totalLevels;
-        
-        const traveled = -this.background.x; // positive distance moved
-        if (this.presentLevel < this.totalLevels && traveled >= this.levelSegment * this.presentLevel) {
-          console.log("we're on level", this.presentLevel);
-          this.presentLevel++;
-          this.roadSpeed += 0.05;
-          this.showLevelBanner(this.presentLevel);
+        //INCREASE LEVEL (only once background size is known)
+        if (this.background.img.isReady && this.background.width) {
+          this.levelSegment = this.background.img.width / this.totalLevels;
+          
+          const traveled = -this.background.x; // positive distance moved
+          if (this.presentLevel < this.totalLevels && traveled >= this.levelSegment * this.presentLevel) {
+            console.log("we're on level", this.presentLevel);
+            this.presentLevel++;
+            this.roadSpeed += 0.1;
+            this.showLevelBanner(this.presentLevel);
+          }
         }
         
-        this.roadSpeed += 0.002;
+        // Gentle acceleration over time, scaled to real time
+        this.roadSpeed += 0.003 * deltaFactor;
         this.road.speed = this.roadSpeed;
         
-        this.background.move();
+        this.background.move(deltaFactor);
         this.background.draw();
-        this.road.move();
+        this.road.move(deltaFactor);
         this.road.draw();
-        this.player.move();
+        this.player.move(deltaFactor);
         this.player.draw();
         this.counter.draw(this.pointsCounter);
         this.drawLevelBanner();
 
         // OBSTACLES
-        this.obstacleTimer++;
-        if (this.obstacleTimer >= this.obstacleInterval) {
+        this.obstacleTimer += delta;
+        if (this.obstacleTimer >= this.obstacleIntervalMs) {
           this.obstacles.push(
             new Obstacle(this.ctx, this.canvasWidth, this.canvasHeight, this.road)
           );
           this.obstacleTimer = 0;
-          this.obstacleInterval = this.getRandomObstacleTime();
+          this.obstacleIntervalMs = this.getRandomObstacleTimeMs();
         }
 
         this.obstacles.forEach(obstacle => {
-          obstacle.move();
+          obstacle.move(deltaFactor);
           obstacle.draw();
         });
 
@@ -259,8 +293,10 @@ class Game {
           this.collisions();
         }
 
-      }, 1000 / 60);
-    }
+        this.animationId = requestAnimationFrame(step);
+      };
+
+      this.animationId = requestAnimationFrame(step);
     } 
     stopGame(reason) {
       if(reason === "lose"){
@@ -268,11 +304,15 @@ class Game {
       } else if (reason === "win"){
         console.log("you win!!");
       }
-      clearInterval(this.intervalId);
-      this.intervalId = undefined;
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = undefined;
+      }
+      this.lastTimestamp = null;
 
       this.theme.pause();
       this.isThemePlaying = false;
+      this.pausedForResize = false;
 
       this.updateEndScore();
       this.showRestartContainer();
@@ -280,8 +320,10 @@ class Game {
         
     }
     restartGame() {
-        clearInterval(this.intervalId);
-        this.intervalId = undefined;
+        if (this.animationId) {
+          cancelAnimationFrame(this.animationId);
+          this.animationId = undefined;
+        }
 
         this.resetGameState();
         this.hideRestartContainer();

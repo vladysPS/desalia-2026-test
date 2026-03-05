@@ -77,8 +77,9 @@ class Obstacle {
     }
 
 
-    move() {
-        this.x -= this.road.speed;
+    move(deltaFactor = 1) {
+        // Keep obstacle speed in sync with road speed; deltaFactor smooths variable frame time
+        this.x -= this.road.speed * deltaFactor;
 
         // Check the far right edge based on number of bottles
         const farRight = this.x + this.count * this.bottomWidth + (this.count - 1) * (this.spacing || 0);
