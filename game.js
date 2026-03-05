@@ -8,19 +8,9 @@ class Game {
     constructor (ctx){
         this.ctx = ctx;
         this.intervalId = undefined;
-        this.todoRectoSinMiedo = true;
+        this.todoRectoSinMiedo = false;
 
-        // Game over / restart UI
-        this.restartContainer = document.querySelector('.restart-container');
-        this.restartButton = document.getElementById('restart-button');
-        this.endScoreElement = document.querySelector('.end-score');
-        this.hideRestartContainer();
-        this.bindRestartButton();
-
-        //Score
-        this.pointsCounter = 0 ;
-        this.pointsFrameCounter = 0;
-
+        this.counter = new Counter(this.ctx, this.canvasWidth, this.canvasHeight);      
         // sounds
         this.isThemePlaying = false;
         this.soundCrash = new Audio("./assets/sounds/flappyhit.mp3");
@@ -30,14 +20,34 @@ class Game {
         this.theme = new Audio('./assets/sounds/samba.mp3');
         this.theme.volume = 0.5;
         this.countDownSound = new Audio('./assets/sounds/countdown.mp3');
-        this.countDownSound.volume = 0.5;
+        this.countDownSound.volume = 0.5;                
+        //Score
+        this.pointsCounter = 0 ;
+        this.pointsFrameCounter = 0;
+
+        this.presentLevel = 1;
+        this.levelSegment = undefined ;  
+        this.totalLevels = 4;
+
+        // Level banner UI
+        this.bannerText = '';
+        this.bannerTimer = 0;
+        this.bannerDuration = 120; // frames (~2s at 60fps)
+
+        // GAME OVER / restart UI
+        this.restartContainer = document.querySelector('.restart-container');
+        this.restartButton = document.getElementById('restart-button');
+        this.endScoreElement = document.querySelector('.end-score');
+        this.hideRestartContainer();
+        this.bindRestartButton();
 
         this.setResponsiveSizes();
         window.addEventListener('resize', () => {
             this.setResponsiveSizes();
         });
 
-        this.backSpeed = 7;
+        //BASE SETUP
+        this.backSpeed = 1;
         this.background = new Background(this.ctx, this.canvasHeight, 0, this.backSpeed);
         this.background.game = this; // Pass the current Game instance to the Background so I can stop the game        
 
@@ -51,7 +61,8 @@ class Game {
         this.obstacleInterval = this.getRandomObstacleTime();
         this.hasCollision = false;
 
-        this.counter = new Counter(this.ctx, this.canvasWidth, this.canvasHeight);
+        // Show initial level banner
+        this.showLevelBanner(this.presentLevel);
 
     }
     bindRestartButton() {
@@ -90,6 +101,9 @@ class Game {
         this.obstacleInterval = this.getRandomObstacleTime();
         this.hasCollision = false;
 
+        this.presentLevel = 1;
+        this.showLevelBanner(this.presentLevel);
+
         if (this.player && typeof this.player.reset === 'function') {
             this.player.reset(this.canvasHeight);
         }
@@ -100,8 +114,53 @@ class Game {
         this.theme.currentTime = 0;
         this.soundCrash.currentTime = 0;
     }
-    getRandomObstacleTime() {
-      return 60 + Math.random() * 120; // entre 1 y 3 segundos aprox (en frames a 60fps)    
+
+    showLevelBanner(levelNumber) {
+        this.bannerText = `LEVEL ${levelNumber}`;
+        this.bannerTimer = this.bannerDuration;
+    }
+
+    drawLevelBanner() {
+        if (this.bannerTimer <= 0) return;
+
+        const fadeFrames = 20;
+        const alpha = this.bannerTimer > fadeFrames
+            ? 1
+            : this.bannerTimer / fadeFrames;
+
+        this.ctx.save();
+        this.ctx.globalAlpha = alpha;
+        this.ctx.fillStyle = 'white';
+        this.ctx.strokeStyle = 'black';
+        this.ctx.lineWidth = 4;
+        this.ctx.textAlign = 'center';
+        this.ctx.font = 'bold 32px sans-serif';
+
+        const x = this.ctx.canvas.width / 2;
+        const y = 50;
+        this.ctx.strokeText(this.bannerText, x, y);
+        this.ctx.fillText(this.bannerText, x, y);
+        this.ctx.restore();
+
+        this.bannerTimer--;
+    }
+    getRandomObstacleTime() { 
+      //return 60 + Math.random() * 120; entre 1 y 3 segundos aprox (en frames a 60fps)       
+      // Spawn spacing shrinks as level rises but keeps a safe floor for jumpable gaps.
+      const levelConfigs = [
+        { min: 100, max: 160 }, // level 1: ~1.6s - 2.7s
+        { min: 80, max: 130 },  // level 2: ~1.3s - 2.1s
+        { min: 60, max: 110 },  // level 3+: ~1.0s - 1.8s
+      ];
+
+      const idx = Math.min((this.presentLevel || 1) - 1, levelConfigs.length - 1);
+      const { min, max } = levelConfigs[idx];
+
+      const safeMin = 45; // ~0.75s at 60fps — enough airtime for a jump arc
+      const spanMin = Math.max(min, safeMin);
+      const spanMax = Math.max(spanMin + 10, max); // keep some spread even at high levels
+
+      return spanMin + Math.random() * (spanMax - spanMin);      
     }
     setResponsiveSizes() {
         const canvasContainer = document.getElementById('canvas-container');
@@ -154,8 +213,19 @@ class Game {
           this.pointsCounter += 1;
           this.pointsFrameCounter = 0;
         }
+
+        //INCREASE LEVEL
+        this.levelSegment = this.background.img.width / this.totalLevels;
         
-        this.roadSpeed += 0.005;
+        const traveled = -this.background.x; // positive distance moved
+        if (this.presentLevel < this.totalLevels && traveled >= this.levelSegment * this.presentLevel) {
+          console.log("we're on level", this.presentLevel);
+          this.presentLevel++;
+          this.roadSpeed += 0.05;
+          this.showLevelBanner(this.presentLevel);
+        }
+        
+        this.roadSpeed += 0.002;
         this.road.speed = this.roadSpeed;
         
         this.background.move();
@@ -165,6 +235,7 @@ class Game {
         this.player.move();
         this.player.draw();
         this.counter.draw(this.pointsCounter);
+        this.drawLevelBanner();
 
         // OBSTACLES
         this.obstacleTimer++;
